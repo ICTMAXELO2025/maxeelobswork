@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Maxelo Business Solutions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 0;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-info span {
+            font-weight: 500;
+        }
+
+        /* Button Styles */
+        .btn, .btn-small {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover, .btn-small:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card h3 {
+            font-size: 1rem;
+            color: var(--gray-color);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card:nth-child(1) .stat-number {
+            color: var(--primary-color);
+        }
+
+        .stat-card:nth-child(2) .stat-number {
+            color: var(--info-color);
+        }
+
+        .stat-card:nth-child(3) .stat-number {
+            color: var(--warning-color);
+        }
+
+        /* Dashboard Navigation */
+        .dashboard-nav {
+            margin-bottom: 30px;
+            animation: fadeIn 0.9s ease;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .nav-item {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: block;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .nav-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            color: inherit;
+        }
+
+        .nav-item:hover::before {
+            opacity: 1;
+        }
+
+        .nav-item h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item p {
+            color: var(--gray-color);
+            line-height: 1.5;
+        }
+
+        /* Icon styles for navigation items */
+        .nav-item:nth-child(1) h3::before { content: '👥'; }
+        .nav-item:nth-child(2) h3::before { content: '📢'; }
+        .nav-item:nth-child(3) h3::before { content: '✉️'; }
+        .nav-item:nth-child(4) h3::before { content: '📁'; }
+        .nav-item:nth-child(5) h3::before { content: '📥'; }
+        .nav-item:nth-child(6) h3::before { content: '📝'; }
+        .nav-item:nth-child(7) h3::before { content: '📊'; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .user-info .btn-small {
+                width: 100%;
+            }
+
+            .dashboard-container {
+                margin: 15px auto;
+                padding: 0 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-number {
+                font-size: 2.2rem;
+            }
+
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-item {
+                padding: 25px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h2 {
+                font-size: 1.2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-number {
+                font-size: 2.5rem;
+            }
+
+            .nav-item h3 {
+                font-size: 1.2rem;
+            }
+
+            .nav-item p {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Quick Actions Section */
+        .quick-actions {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+            animation: slideUp 0.7s ease;
+        }
+
+        .quick-actions h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-actions h3::before {
+            content: '⚡';
+            font-size: 1.2em;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* System Status */
+        .system-status {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--box-shadow);
+            animation: slideUp 0.8s ease;
+            margin-bottom: 30px;
+        }
+
+        .system-status h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .system-status h3::before {
+            content: '🟢';
+            font-size: 1.2em;
+        }
+
+        .status-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success-color);
+        }
+
+        .status-indicator.warning {
+            background: var(--warning-color);
+        }
+
+        .status-indicator.danger {
+            background: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo">
+                <h2>Maxelo Business Solutions - Admin Dashboard</h2>
+            </div>
+            <div class="user-info">
+                <span>Welcome, {{ current_user.name }} {{ current_user.surname }}</span>
+                <a href="{{ url_for('profile') }}" class="btn-small">Profile</a>
+                <a href="{{ url_for('logout') }}" class="btn-small">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+                <a href="{{ url_for('send_notification') }}" class="btn-small" style="background: var(--warning-color); color: black;">
+                    📢 Send Quick Notification
+                </a>
+                <a href="{{ url_for('manage_employees') }}" class="btn-small" style="background: var(--info-color);">
+                    👥 Add New Employee
+                </a>
+                <a href="{{ url_for('admin_messages') }}" class="btn-small" style="background: var(--success-color);">
+                    ✉️ Compose Message
+                </a>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="system-status">
+            <h3>System Status</h3>
+            <div class="status-items">
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>Application: Online</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>Database: Connected</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>File System: Active</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>Users: {{ total_employees }} Active</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Employees</h3>
+                <div class="stat-number">{{ total_employees }}</div>
+                <small>Active team members</small>
+            </div>
+            <div class="stat-card">
+                <h3>Total Messages</h3>
+                <div class="stat-number">{{ total_messages }}</div>
+                <small>System-wide communications</small>
+            </div>
+            <div class="stat-card">
+                <h3>Unread Messages</h3>
+                <div class="stat-number">{{ unread_messages }}</div>
+                <small>Requiring attention</small>
+            </div>
+        </div>
+
+        <div class="dashboard-nav">
+            <div class="nav-grid">
+                <a href="{{ url_for('manage_employees') }}" class="nav-item">
+                    <h3>Manage Employees</h3>
+                    <p>Add, edit, or remove employees from the system</p>
+                </a>
+                <a href="{{ url_for('send_notification') }}" class="nav-item">
+                    <h3>Send Notifications</h3>
+                    <p>Send announcements and alerts to all employees</p>
+                </a>
+                <a href="{{ url_for('admin_messages') }}" class="nav-item">
+                    <h3>Messages</h3>
+                    <p>Send and manage messages with employees</p>
+                </a>
+                <a href="{{ url_for('admin_file_manager') }}" class="nav-item">
+                    <h3>File Manager</h3>
+                    <p>Manage company files and document storage</p>
+                </a>
+                <a href="{{ url_for('admin_inbox') }}" class="nav-item">
+                    <h3>Inbox</h3>
+                    <p>Check received messages and communications</p>
+                </a>
+                <a href="{{ url_for('admin_todo') }}" class="nav-item">
+                    <h3>To-Do List</h3>
+                    <p>Manage your administrative tasks and priorities</p>
+                </a>
+                <a href="{{ url_for('admin_login_logs') }}" class="nav-item">
+                    <h3>Login Logs</h3>
+                    <p>Monitor system access and user activity logs</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity Preview -->
+        <div class="system-status">
+            <h3>Recent Activity</h3>
+            <div style="text-align: center; padding: 20px; color: var(--gray-color);">
+                <p>Recent system activities and user actions will appear here</p>
+                <a href="{{ url_for('admin_login_logs') }}" class="btn-small" style="margin-top: 10px;">
+                    View Full Activity Logs
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh every 30 seconds for real-time updates
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+
+        // Add animation to stat cards on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.2}s`;
+            });
+
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach((item, index) => {
+                item.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Add pulse animation to unread messages if there are any
+            const unreadMessages = {{ unread_messages }};
+            if (unreadMessages > 0) {
+                const unreadCard = document.querySelector('.stat-card:nth-child(3)');
+                if (unreadCard) {
+                    unreadCard.style.animation = 'pulse 2s ease 3';
+                }
+            }
+        });
+
+        // Real-time updates simulation
+        function simulateRealTimeUpdates() {
+            const stats = document.querySelectorAll('.stat-number');
+            if (stats.length >= 3) {
+                // Randomly update stats to simulate real-time changes
+                setInterval(() => {
+                    const randomChange = Math.random() > 0.7 ? 1 : 0;
+                    if (randomChange && {{ unread_messages }} > 0) {
+                        const unreadElement = stats[2];
+                        const currentValue = parseInt(unreadElement.textContent);
+                        unreadElement.textContent = currentValue + (Math.random() > 0.5 ? 1 : -1);
+                        
+                        if (parseInt(unreadElement.textContent) > 0) {
+                            unreadElement.parentElement.style.animation = 'pulse 1s ease';
+                            setTimeout(() => {
+                                unreadElement.parentElement.style.animation = '';
+                            }, 1000);
+                        }
+                    }
+                }, 10000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', simulateRealTimeUpdates);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Alt + N for new notification
+            if (e.altKey && e.key === 'n') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('send_notification') }}";
+            }
+            // Alt + E for employee management
+            if (e.altKey && e.key === 'e') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('manage_employees') }}";
+            }
+            // Alt + M for messages
+            if (e.altKey && e.key === 'm') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('admin_messages') }}";
+            }
+        });
+
+        // Show keyboard shortcuts help
+        function showKeyboardShortcuts() {
+            alert('Keyboard Shortcuts:\n\nAlt + N - Send Notification\nAlt + E - Manage Employees\nAlt + M - Messages');
+        }
+
+        // Add keyboard shortcuts info to quick actions
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickActions = document.querySelector('.quick-actions .action-buttons');
+            if (quickActions) {
+                const helpBtn = document.createElement('button');
+                helpBtn.className = 'btn-small';
+                helpBtn.style.background = 'var(--gray-color)';
+                helpBtn.innerHTML = '⌨️ Keyboard Shortcuts';
+                helpBtn.onclick = showKeyboardShortcuts;
+                quickActions.appendChild(helpBtn);
+            }
+        });
+    </script>
+</body>
+</html>

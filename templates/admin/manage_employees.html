@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Employees - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 0;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-info span {
+            font-weight: 500;
+        }
+
+        /* Button Styles */
+        .btn, .btn-small {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover, .btn-small:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: var(--border-radius);
+            animation: slideIn 0.5s ease;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left-color: var(--success-color);
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left-color: var(--danger-color);
+        }
+
+        /* Form Container */
+        .form-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+            animation: slideUp 0.6s ease;
+            position: relative;
+        }
+
+        .form-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .form-container h3 {
+            margin-bottom: 25px;
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-container h3::before {
+            content: '👤';
+            font-size: 1.2em;
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="tel"],
+        .form-group input[type="password"],
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .password-strength {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            height: 20px;
+            transition: var(--transition);
+        }
+
+        .strength-weak { color: var(--danger-color); font-weight: 600; }
+        .strength-medium { color: var(--warning-color); font-weight: 600; }
+        .strength-strong { color: var(--success-color); font-weight: 600; }
+
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            animation: slideUp 0.7s ease;
+            position: relative;
+        }
+
+        .table-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .table-container h3 {
+            margin-bottom: 25px;
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-container h3::before {
+            content: '👥';
+            font-size: 1.2em;
+        }
+
+        /* Search Box */
+        .search-box {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: #f8f9fa;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            animation: fadeIn 1s ease;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: var(--light-color);
+            font-weight: 600;
+            color: var(--dark-color);
+            position: sticky;
+            top: 0;
+        }
+
+        tr {
+            transition: var(--transition);
+        }
+
+        tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            transform: translateX(5px);
+        }
+
+        /* Role Badges */
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-employee {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .role-admin {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .role-both {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray-color);
+            animation: fadeIn 1s ease;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--gray-color);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .user-info .btn-small {
+                width: 100%;
+            }
+
+            .dashboard-container {
+                margin: 15px auto;
+                padding: 0 15px;
+            }
+
+            .form-container, .table-container {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            th, td {
+                padding: 12px 10px;
+                font-size: 0.9rem;
+            }
+
+            .btn, .btn-small {
+                padding: 12px 15px;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h2 {
+                font-size: 1.2rem;
+            }
+
+            .form-container h3, .table-container h3 {
+                font-size: 1.2rem;
+            }
+
+            /* Hide less important columns on mobile */
+            th:nth-child(1), td:nth-child(1),
+            th:nth-child(4), td:nth-child(4) {
+                display: none;
+            }
+
+            .role-badge {
+                font-size: 0.7rem;
+                padding: 3px 6px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Quick Stats */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--gray-color);
+            font-size: 0.9rem;
+        }
+
+        /* Cellphone input styling */
+        .cellphone-input {
+            position: relative;
+        }
+
+        .cellphone-input::before {
+            content: '+27';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-color);
+            font-weight: 500;
+            z-index: 1;
+        }
+
+        .cellphone-input input {
+            padding-left: 50px !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo">
+                <h2>Manage Employees - Admin Dashboard</h2>
+            </div>
+            <div class="user-info">
+                <span>Welcome, {{ current_user.name }} {{ current_user.surname }}</span>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-small">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn-small">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ employees|length }}</div>
+                <div class="stat-label">Total Employees</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ employees|selectattr('role', 'equalto', 'admin')|list|length }}</div>
+                <div class="stat-label">Admin Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ employees|selectattr('role', 'equalto', 'employee')|list|length }}</div>
+                <div class="stat-label">Regular Employees</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ employees|selectattr('role', 'equalto', 'both')|list|length }}</div>
+                <div class="stat-label">Dual Role Users</div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <h3>Add New Employee</h3>
+            <form method="POST" id="employeeForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">First Name:</label>
+                        <input type="text" id="name" name="name" required placeholder="Enter first name">
+                    </div>
+                    <div class="form-group">
+                        <label for="surname">Surname:</label>
+                        <input type="text" id="surname" name="surname" required placeholder="Enter surname">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required placeholder="employee@maxelobs.com">
+                    </div>
+                    <div class="form-group cellphone-input">
+                        <label for="cellphone">Cellphone Number:</label>
+                        <input type="tel" id="cellphone" name="cellphone" required 
+                               pattern="[0-9]{9}" title="Please enter a valid 9-digit cellphone number (without country code)"
+                               placeholder="123456789" maxlength="9">
+                        <small style="display: block; margin-top: 5px; color: var(--gray-color); font-size: 0.8rem;">
+                            Format: 123456789 (9 digits without +27)
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="position">Position:</label>
+                        <input type="text" id="position" name="position" required placeholder="Enter position">
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Role:</label>
+                        <select id="role" name="role" required>
+                            <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                            <option value="both">Both (Admin & Employee)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required 
+                               placeholder="Enter password" minlength="8">
+                        <div class="password-strength" id="passwordStrength"></div>
+                        <small style="display: block; margin-top: 5px; color: var(--gray-color); font-size: 0.8rem;">
+                            Minimum 8 characters with uppercase, lowercase, and numbers
+                        </small>
+                    </div>
+                </div>
+                <button type="submit" class="btn">➕ Add Employee</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <h3>Current Employees ({{ employees|length }})</h3>
+            
+            <input type="text" class="search-box" placeholder="🔍 Search employees by name, email, position, or cellphone..." id="employeeSearch">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Cellphone</th>
+                        <th>Position</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr>
+                        <td>
+                            <strong>{{ employee.user_id }}</strong>
+                        </td>
+                        <td>
+                            <strong>{{ employee.name }} {{ employee.surname }}</strong>
+                        </td>
+                        <td>{{ employee.email }}</td>
+                        <td>
+                            {% if employee.cellphone %}
+                                +27 {{ employee.cellphone[:3] }} {{ employee.cellphone[3:6] }} {{ employee.cellphone[6:] }}
+                            {% else %}
+                                <span style="color: var(--gray-color);">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ employee.position }}</td>
+                        <td>
+                            <span class="role-badge role-{{ employee.role }}">
+                                {{ employee.role|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('delete_employee', user_id=employee.id) }}" 
+                               class="btn-small btn-danger" 
+                               onclick="return confirmDelete('{{ employee.name }} {{ employee.surname }}')">
+                                🗑️ Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            {% if not employees %}
+            <div class="empty-state">
+                <h3>No employees found</h3>
+                <p>Add your first employee using the form above to get started!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Auto-generate email based on name
+        function generateEmail() {
+            const name = document.getElementById('name').value.toLowerCase().trim();
+            const surname = document.getElementById('surname').value.toLowerCase().trim();
+            if (name && surname) {
+                const email = name + '.' + surname + '@maxelobs.com';
+                document.getElementById('email').value = email;
+            }
+        }
+
+        document.getElementById('name').addEventListener('blur', generateEmail);
+        document.getElementById('surname').addEventListener('blur', generateEmail);
+
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthIndicator = document.getElementById('passwordStrength');
+            
+            let strength = 0;
+            let feedback = '';
+
+            // Length check
+            if (password.length >= 8) strength++;
+            
+            // Character variety checks
+            if (password.match(/[a-z]/)) strength++;
+            if (password.match(/[A-Z]/)) strength++;
+            if (password.match(/\d/)) strength++;
+            if (password.match(/[^a-zA-Z\d]/)) strength++;
+
+            switch(true) {
+                case (strength <= 2):
+                    feedback = 'Weak password';
+                    strengthIndicator.className = 'password-strength strength-weak';
+                    break;
+                case (strength <= 4):
+                    feedback = 'Medium strength';
+                    strengthIndicator.className = 'password-strength strength-medium';
+                    break;
+                default:
+                    feedback = 'Strong password';
+                    strengthIndicator.className = 'password-strength strength-strong';
+                    break;
+            }
+
+            strengthIndicator.textContent = feedback;
+        });
+
+        // Cellphone number formatting
+        document.getElementById('cellphone').addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            let value = e.target.value.replace(/\D/g, '');
+            
+            // Limit to 9 digits
+            if (value.length > 9) {
+                value = value.substring(0, 9);
+            }
+            
+            e.target.value = value;
+        });
+
+        // Search functionality
+        document.getElementById('employeeSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show empty state if no results
+            const emptyState = document.querySelector('.empty-state');
+            if (emptyState && visibleCount === 0 && searchTerm !== '') {
+                emptyState.style.display = 'block';
+                emptyState.innerHTML = `
+                    <h3>No employees found</h3>
+                    <p>No employees match your search criteria. Try different keywords.</p>
+                `;
+            } else if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+        });
+
+        // Form submission with loading state
+        document.getElementById('employeeForm').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Validate cellphone number
+            const cellphone = document.getElementById('cellphone').value;
+            if (cellphone.length !== 9) {
+                alert('Please enter a valid 9-digit cellphone number');
+                e.preventDefault();
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Adding Employee...';
+            
+            // Re-enable after 3 seconds (in case of error)
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }, 3000);
+        });
+
+        // Add animation to table rows on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach((row, index) => {
+                row.style.animationDelay = `${index * 0.1}s`;
+                row.style.animation = 'fadeIn 0.6s ease forwards';
+                row.style.opacity = '0';
+            });
+
+            // Auto-focus on first name field
+            document.getElementById('name').focus();
+        });
+
+        // Enhanced delete confirmation
+        function confirmDelete(employeeName) {
+            return confirm(`Are you sure you want to delete ${employeeName}? This action cannot be undone and will remove all associated data.`);
+        }
+
+        // Add enhanced delete handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('.btn-danger');
+            deleteButtons.forEach(button => {
+                button.onclick = function() {
+                    const employeeName = this.closest('tr').querySelector('td:nth-child(2) strong').textContent;
+                    return confirmDelete(employeeName);
+                };
+            });
+        });
+
+        // Real-time form validation
+        function validateForm() {
+            const name = document.getElementById('name').value.trim();
+            const surname = document.getElementById('surname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const cellphone = document.getElementById('cellphone').value.trim();
+            const position = document.getElementById('position').value.trim();
+            const password = document.getElementById('password').value;
+            
+            const submitBtn = document.querySelector('#employeeForm button[type="submit"]');
+            const isValid = name && surname && email && cellphone.length === 9 && position && password.length >= 8;
+            
+            submitBtn.disabled = !isValid;
+        }
+
+        // Add validation listeners
+        document.getElementById('name').addEventListener('input', validateForm);
+        document.getElementById('surname').addEventListener('input', validateForm);
+        document.getElementById('email').addEventListener('input', validateForm);
+        document.getElementById('cellphone').addEventListener('input', validateForm);
+        document.getElementById('position').addEventListener('input', validateForm);
+        document.getElementById('password').addEventListener('input', validateForm);
+
+        // Initial validation
+        document.addEventListener('DOMContentLoaded', validateForm);
+    </script>
+</body>
+</html>
