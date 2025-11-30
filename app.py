@@ -32,15 +32,7 @@ def get_database_url():
             database_url = database_url.replace("postgres://", "postgresql://", 1)
             print("Fixed postgres:// to postgresql://")
         
-        # Parse and validate the URL
-        try:
-            # Basic validation - check if it looks like a valid URL
-            if not re.match(r'^postgresql://[^:]+:[^@]+@[^:/]+(:\d+)?/[^?]+', database_url):
-                print("Database URL format seems invalid")
-            return database_url
-        except Exception as e:
-            print(f"Error parsing DATABASE_URL: {e}")
-            return None
+        return database_url
     else:
         # Fallback for local development
         print("DATABASE_URL not found, using fallback configuration")
@@ -75,15 +67,10 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE', 16 * 1024 * 10
 for folder in ['documents', 'images', 'profiles']:
     os.makedirs(f'{app.config["UPLOAD_FOLDER"]}/{folder}', exist_ok=True)
 
-# Initialize extensions first, then configure
-db = SQLAlchemy()
-login_manager = LoginManager()
-
-def create_app():
-    # Configure app
-    db.init_app(app)
-    login_manager.init_app(app)
-    login_manager.login_view = 'login'
+# Initialize extensions
+db = SQLAlchemy(app)  # Initialize with app directly
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
     
     return app
 
