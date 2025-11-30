@@ -10,56 +10,26 @@ from datetime import datetime
 import uuid
 import bcrypt
 from dotenv import load_dotenv
-import re
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-# Railway-specific configuration
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'railway-default-secret-key-change-in-production')
+# Render-specific configuration
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'render-default-secret-key-change-in-production')
 
-# Database configuration with better error handling
-def get_database_url():
-    # Try Railway's DATABASE_URL first
-    database_url = os.getenv('DATABASE_URL')
-    
-    if database_url:
-        print(f"Found DATABASE_URL: {database_url[:20]}...")  # Log first 20 chars
-        # Fix common PostgreSQL URL issues
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-            print("Fixed postgres:// to postgresql://")
-        
-        return database_url
-    else:
-        # Fallback for local development
-        print("DATABASE_URL not found, using fallback configuration")
-        db_user = os.getenv('DB_USER', 'postgres')
-        db_password = os.getenv('DB_PASSWORD', 'Maxelo%402023')
-        db_host = os.getenv('DB_HOST', 'localhost')
-        db_port = os.getenv('DB_PORT', '5432')
-        db_name = os.getenv('DB_NAME', 'maxelo')
-        
-        return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-
-# Set database configuration
-database_url = get_database_url()
+# Use Render's PostgreSQL database URL
+database_url = os.getenv('DATABASE_URL')
 if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    print(f"Using database: {database_url.split('@')[-1]}")  # Log database location
 else:
-    # Fallback to SQLite if no database URL is available
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local.db'
-    print("Using SQLite fallback database")
+    # Fallback for local development
+    app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://username:Maxelo%402023@localhost:5432/maxelo"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_recycle': 300,
-    'pool_pre_ping': True
-}
-
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE', 16 * 1024 * 1024))
 
@@ -67,15 +37,13 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE', 16 * 1024 * 10
 for folder in ['documents', 'images', 'profiles']:
     os.makedirs(f'{app.config["UPLOAD_FOLDER"]}/{folder}', exist_ok=True)
 
-# Initialize extensions
-db = SQLAlchemy(app)  # Initialize with app directly
-login_manager = LoginManager(app)
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 login_manager.login_view = 'login'
-    
-    return app
 
-# Create app instance
-app = create_app()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # Models
 class User(UserMixin, db.Model):
@@ -84,7 +52,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     surname = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    cellphone = db.Column(db.String(15), nullable=False)
+    cellphone = db.Column(db.String(15), nullable=False)  # New field
     position = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
@@ -165,9 +133,6 @@ def allowed_file(filename):
         'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'
     }
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 # Routes
 @app.route('/')
 def index():
@@ -1052,46 +1017,37 @@ def profile():
                          recent_todos=recent_todos,
                          admin_stats=admin_stats)
 
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 
-
-
-# Initialize database with error handling
+# Initialize database and create admin user
 def init_db():
-    with app.app_context():
-        try:
-            print("Creating database tables...")
-            db.create_all()
-            print("Database tables created successfully")
-            
-            # Create default admin user if not exists
-            admin = User.query.filter_by(email='admin@maxelobs.com').first()
-            if not admin:
-                admin_user = User(
-                    user_id='MAXELOBS-202500',
-                    name='Katlego',
-                    surname='Papala',
-                    email='admin@maxelobs.com',
-                    cellphone='0123456789',
-                    position='System Administrator',
-                    role='both'
-                )
-                admin_user.set_password('Admin@123')
-                db.session.add(admin_user)
-                db.session.commit()
-                print("Default admin user created!")
-            else:
-                print("Admin user already exists")
-                
-        except Exception as e:
-            print(f"Error initializing database: {e}")
-            # Don't raise the exception to allow the app to start
+    try:
+        db.create_all()
+        
+        # Create default admin user if not exists
+        admin = User.query.filter_by(email='admin@maxelobs.com').first()
+        if not admin:
+            admin_user = User(
+                user_id='MAXELOBS-202500',
+                name='Katlego',
+                surname='Papala',
+                email='admin@maxelobs.com',
+                cellphone='0123456789',
+                position='System Administrator',
+                role='both'
+            )
+            admin_user.set_password('Admin@123')
+            db.session.add(admin_user)
+            db.session.commit()
+            print("Default admin user created!")
+    except Exception as e:
+        print(f"Error initializing database: {e}")
 
+# Remove the if __name__ == '__main__' block and replace with:
 if __name__ == '__main__':
-    # Initialize database
-    init_db()
-    
-    # Get port from environment or default to 5000
-    port = int(os.environ.get('PORT', 5000))
-    print(f"Starting server on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+    with app.app_context():
+        init_db()
+    app.run(debug=False)
