@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Sent Notifications - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 0;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-info span {
+            font-weight: 500;
+        }
+
+        /* Button Styles */
+        .btn, .btn-small {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover, .btn-small:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            animation: slideUp 0.6s ease;
+            margin-bottom: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .table-header h3 {
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-header h3::before {
+            content: '📢';
+            font-size: 1.2em;
+        }
+
+        .notifications-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .notifications-table th {
+            background: var(--light-color);
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark-color);
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .notifications-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        .notifications-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .notifications-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Notification Item Styles */
+        .notification-item {
+            margin-bottom: 0;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            color: var(--gray-color);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .notification-date {
+            color: var(--gray-color);
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .notification-sender {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        /* File Attachment Styles */
+        .file-attachment {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            background: var(--light-color);
+            border-radius: 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .file-attachment:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .file-attachment i {
+            font-size: 1.1em;
+        }
+
+        /* No Data Message */
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-color);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .no-data h4 {
+            margin-bottom: 10px;
+            color: var(--dark-color);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .user-info .btn-small {
+                width: 100%;
+            }
+
+            .dashboard-container {
+                margin: 15px auto;
+                padding: 0 15px;
+            }
+
+            .table-container {
+                padding: 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .notifications-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .notifications-table th,
+            .notifications-table td {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            .btn, .btn-small {
+                padding: 12px 15px;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h2 {
+                font-size: 1.2rem;
+            }
+
+            .table-header h3 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo">
+                <h2>Sent Notifications - Admin Dashboard</h2>
+            </div>
+            <div class="user-info">
+                <span>Welcome, {{ current_user.name }} {{ current_user.surname }}</span>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-small">Dashboard</a>
+                <a href="{{ url_for('send_notification') }}" class="btn-small">Send New</a>
+                <a href="{{ url_for('logout') }}" class="btn-small">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="table-container">
+            <div class="table-header">
+                <h3>All Sent Notifications</h3>
+                <div>
+                    <span style="color: var(--gray-color);">
+                        Total: {{ notifications|length }} notifications
+                    </span>
+                </div>
+            </div>
+
+            {% if notifications %}
+            <table class="notifications-table">
+                <thead>
+                    <tr>
+                        <th width="25%">Title</th>
+                        <th width="35%">Message</th>
+                        <th width="15%">Attachment</th>
+                        <th width="15%">Sent By</th>
+                        <th width="10%">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in notifications %}
+                    <tr class="notification-item">
+                        <td>
+                            <div class="notification-title">{{ notification.title }}</div>
+                        </td>
+                        <td>
+                            <div class="notification-message" title="{{ notification.message }}">
+                                {{ notification.message[:100] }}{% if notification.message|length > 100 %}...{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if notification.file_path %}
+                            <a href="{{ url_for('download_notification_file', notification_id=notification.id) }}" 
+                               class="file-attachment" title="Download {{ notification.file_name }}">
+                                📎 {{ notification.file_type|upper }}
+                            </a>
+                            {% else %}
+                            <span style="color: var(--gray-color); font-size: 0.9rem;">No attachment</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="notification-sender">
+                                {% if notification.sender %}
+                                    {{ notification.sender.name }}
+                                {% else %}
+                                    Unknown
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="notification-date">
+                                {{ notification.created_at.strftime('%Y-%m-%d') }}<br>
+                                {{ notification.created_at.strftime('%H:%M') }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <i>📢</i>
+                <h4>No Notifications Sent Yet</h4>
+                <p>You haven't sent any notifications to employees.</p>
+                <a href="{{ url_for('send_notification') }}" class="btn" style="margin-top: 15px;">
+                    Send Your First Notification
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Add animation to table rows
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('.notification-item');
+            rows.forEach((row, index) => {
+                row.style.animationDelay = `${index * 0.05}s`;
+                row.style.animation = 'fadeIn 0.5s ease forwards';
+                row.style.opacity = '0';
+            });
+        });
+
+        // Tooltip for full message
+        document.querySelectorAll('.notification-message').forEach(el => {
+            el.addEventListener('mouseenter', function() {
+                if (this.title) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'tooltip';
+                    tooltip.textContent = this.title;
+                    tooltip.style.position = 'absolute';
+                    tooltip.style.background = 'rgba(0,0,0,0.8)';
+                    tooltip.style.color = 'white';
+                    tooltip.style.padding = '8px 12px';
+                    tooltip.style.borderRadius = '4px';
+                    tooltip.style.zIndex = '1000';
+                    tooltip.style.fontSize = '0.85rem';
+                    tooltip.style.maxWidth = '300px';
+                    
+                    const rect = this.getBoundingClientRect();
+                    tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+                    tooltip.style.left = (rect.left) + 'px';
+                    
+                    document.body.appendChild(tooltip);
+                    
+                    this.addEventListener('mouseleave', function() {
+                        tooltip.remove();
+                    });
+                }
+            });
+        });
+
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

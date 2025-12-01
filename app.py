@@ -1,4 +1,3 @@
-
 import os
 import logging
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, session
@@ -6,15 +5,23 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import bcrypt
 from dotenv import load_dotenv
+import pytz
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
+
+# Set South African timezone
+SA_TIMEZONE = pytz.timezone('Africa/Johannesburg')
+
+def get_sa_time():
+    """Get current time in South African timezone"""
+    return datetime.now(SA_TIMEZONE)
 
 # Render-specific configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'render-default-secret-key-change-in-production')
@@ -27,7 +34,7 @@ if database_url:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     # Fallback for local development
-    app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://username:Maxelo%402023@localhost:5432/maxelo"
+    app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:Maxelo%402023@localhost:5432/maxelo"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
@@ -36,6 +43,9 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE', 16 * 1024 * 10
 # Ensure upload directories exist
 for folder in ['documents', 'images', 'profiles']:
     os.makedirs(f'{app.config["UPLOAD_FOLDER"]}/{folder}', exist_ok=True)
+
+# Add this to your app.py after UPLOAD_FOLDER configuration
+os.makedirs(f'{app.config["UPLOAD_FOLDER"]}/notifications', exist_ok=True)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -52,12 +62,12 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     surname = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    cellphone = db.Column(db.String(15), nullable=False)  # New field
+    cellphone = db.Column(db.String(15), nullable=False)
     position = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_sa_time())
     
     def set_password(self, password):
         self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -65,24 +75,35 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
+# Update the Notification model
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_sa_time())
     is_read = db.Column(db.Boolean, default=False)
-
-class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    subject = db.Column(db.String(200), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # Add file attachment fields
     file_path = db.Column(db.String(500), nullable=True)
     file_name = db.Column(db.String(300), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_read = db.Column(db.Boolean, default=False)
+    file_type = db.Column(db.String(50), nullable=True)
+    
+    # Relationship
+    sender = db.relationship('User', backref='sent_notifications')
+
+class LeaveRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    leave_type = db.Column(db.String(50), nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: get_sa_time())
+    updated_at = db.Column(db.DateTime, default=lambda: get_sa_time(), onupdate=lambda: get_sa_time())
+    
+    employee = db.relationship('User', backref='leave_requests')
 
 class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -92,7 +113,7 @@ class Todo(db.Model):
     priority = db.Column(db.String(20), nullable=False)
     deadline = db.Column(db.DateTime, nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_sa_time())
 
 class FileFolder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -103,12 +124,12 @@ class FileFolder(db.Model):
     file_path = db.Column(db.String(500), nullable=True)
     file_type = db.Column(db.String(50), nullable=True)
     file_size = db.Column(db.Integer, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: get_sa_time())
 
 class LoginLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    login_time = db.Column(db.DateTime, default=datetime.utcnow)
+    login_time = db.Column(db.DateTime, default=lambda: get_sa_time())
     role = db.Column(db.String(20), nullable=False)
     user = db.relationship('User', backref='login_logs')
 
@@ -130,9 +151,9 @@ def generate_user_id():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {
-        'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'
+        'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'ppt', 
+        'pptx', 'xls', 'xlsx', 'zip', 'rar', 'csv', 'json', 'xml'
     }
-
 # Routes
 @app.route('/')
 def index():
@@ -200,7 +221,6 @@ def forgot_password():
         
         user = User.query.filter_by(user_id=user_id, email=email, is_active=True).first()
         if user:
-            # Redirect to reset password page with user details
             return redirect(url_for('reset_password', user_id=user_id, email=email))
         else:
             flash('Invalid User ID or Email', 'error')
@@ -215,21 +235,14 @@ def reset_password():
         new_password = request.form['new_password']
         confirm_password = request.form['confirm_password']
         
-        # Validate passwords match
         if new_password != confirm_password:
             flash('Passwords do not match', 'error')
-            return render_template('auth/reset_password.html', 
-                                 user_id=user_id, 
-                                 email=email)
+            return render_template('auth/reset_password.html', user_id=user_id, email=email)
         
-        # Validate password strength
         if len(new_password) < 8:
             flash('Password must be at least 8 characters long', 'error')
-            return render_template('auth/reset_password.html', 
-                                 user_id=user_id, 
-                                 email=email)
+            return render_template('auth/reset_password.html', user_id=user_id, email=email)
         
-        # Find user and reset password
         user = User.query.filter_by(user_id=user_id, email=email, is_active=True).first()
         if user:
             user.set_password(new_password)
@@ -240,7 +253,6 @@ def reset_password():
             flash('Invalid User ID or Email', 'error')
             return redirect(url_for('forgot_password'))
     
-    # GET request - check if user came from forgot password
     user_id = request.args.get('user_id')
     email = request.args.get('email')
     
@@ -248,9 +260,7 @@ def reset_password():
         flash('Please use the forgot password form first', 'error')
         return redirect(url_for('forgot_password'))
     
-    return render_template('auth/reset_password.html', 
-                         user_id=user_id, 
-                         email=email)
+    return render_template('auth/reset_password.html', user_id=user_id, email=email)
 
 @app.route('/logout')
 @login_required
@@ -267,13 +277,38 @@ def admin_dashboard():
         return redirect(url_for('employee_dashboard'))
     
     total_employees = User.query.filter_by(is_active=True).count()
-    total_messages = Message.query.filter_by(receiver_id=current_user.id).count()
-    unread_messages = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+    pending_leaves = LeaveRequest.query.filter_by(status='pending').count()
+    recent_leaves = LeaveRequest.query.order_by(LeaveRequest.created_at.desc()).limit(5).all()
+    total_notifications = Notification.query.count()
+    
+    # Get counts of approved and rejected leaves from recent leaves
+    total_leaves_approved = sum(1 for leave in recent_leaves if leave.status == 'approved')
+    total_leaves_rejected = sum(1 for leave in recent_leaves if leave.status == 'rejected')
+    
+    # Get admin statistics for profile page
+    admin_stats = {
+        'total_employees': total_employees,
+        'total_notifications': total_notifications,
+        'active_tasks': Todo.query.filter_by(is_completed=False).count(),
+        'pending_leaves': pending_leaves
+    }
+    
+    # Format dates for display
+    for leave in recent_leaves:
+        leave.start_date_display = leave.start_date.strftime('%Y-%m-%d')
+        leave.end_date_display = leave.end_date.strftime('%Y-%m-%d')
+    
+    # Get employee objects for recent leaves
+    for leave in recent_leaves:
+        leave.employee = User.query.get(leave.employee_id) if leave.employee_id else None
     
     return render_template('admin/admin_dashboard.html',
                          total_employees=total_employees,
-                         total_messages=total_messages,
-                         unread_messages=unread_messages)
+                         pending_leaves=pending_leaves,
+                         recent_leaves=recent_leaves,
+                         admin_stats=admin_stats,
+                         total_leaves_approved=total_leaves_approved,
+                         total_leaves_rejected=total_leaves_rejected)
 
 @app.route('/admin/manage-employees', methods=['GET', 'POST'])
 @login_required
@@ -286,7 +321,7 @@ def manage_employees():
         name = request.form['name']
         surname = request.form['surname']
         email = request.form['email']
-        cellphone = request.form['cellphone']  # New field
+        cellphone = request.form['cellphone']
         position = request.form['position']
         role = request.form['role']
         password = request.form['password']
@@ -297,7 +332,7 @@ def manage_employees():
             name=name,
             surname=surname,
             email=email,
-            cellphone=cellphone,  # New field
+            cellphone=cellphone,
             position=position,
             role=role
         )
@@ -329,6 +364,7 @@ def delete_employee(user_id):
         flash('Employee not found', 'error')
     
     return redirect(url_for('manage_employees'))
+# Admin Routes
 
 @app.route('/admin/send-notification', methods=['GET', 'POST'])
 @login_required
@@ -340,11 +376,26 @@ def send_notification():
     if request.method == 'POST':
         title = request.form['title']
         message = request.form['message']
+        file = request.files.get('file')
+        
+        file_path = None
+        file_name = None
+        file_type = None
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = f"uploads/notifications/{uuid.uuid4()}_{filename}"
+            file_type = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'unknown'
+            file.save(file_path)
+            file_name = filename
         
         notification = Notification(
             title=title,
             message=message,
-            sender_id=current_user.id
+            sender_id=current_user.id,
+            file_path=file_path,
+            file_name=file_name,
+            file_type=file_type
         )
         db.session.add(notification)
         db.session.commit()
@@ -352,43 +403,30 @@ def send_notification():
     
     return render_template('admin/send_notifications.html')
 
-@app.route('/admin/messages', methods=['GET', 'POST'])
+@app.route('/admin/view-notifications')
 @login_required
-def admin_messages():
+def admin_view_notifications():
     if current_user.role not in ['admin', 'both']:
         flash('Access denied', 'error')
         return redirect(url_for('employee_dashboard'))
     
-    employees = User.query.filter(User.id != current_user.id, User.is_active == True).all()
-    
-    if request.method == 'POST':
-        receiver_id = request.form['receiver_id']
-        subject = request.form['subject']
-        message_text = request.form['message']
-        file = request.files.get('file')
-        
-        file_path = None
-        file_name = None
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = f"uploads/documents/{uuid.uuid4()}_{filename}"
-            file.save(file_path)
-            file_name = filename
-        
-        new_message = Message(
-            subject=subject,
-            message=message_text,
-            sender_id=current_user.id,
-            receiver_id=receiver_id,
-            file_path=file_path,
-            file_name=file_name
-        )
-        db.session.add(new_message)
-        db.session.commit()
-        flash('Message sent successfully', 'success')
-    
-    sent_messages = Message.query.filter_by(sender_id=current_user.id).order_by(Message.created_at.desc()).all()
-    return render_template('admin/messages.html', employees=employees, sent_messages=sent_messages)
+    notifications = Notification.query.order_by(Notification.created_at.desc()).all()
+    return render_template('admin/view_notifications.html', notifications=notifications)
+
+# Employee Routes
+
+
+
+@app.route('/download-notification-file/<int:notification_id>')
+@login_required
+def download_notification_file(notification_id):
+    notification = Notification.query.get(notification_id)
+    if notification and notification.file_path:
+        return send_file(notification.file_path, as_attachment=True, download_name=notification.file_name)
+    flash('File not found', 'error')
+    return redirect(request.referrer or url_for('employee_notifications'))
+
+# API Route for marking notification as read
 
 @app.route('/admin/search-employees')
 @login_required
@@ -404,7 +442,7 @@ def search_employees():
             User.surname.ilike(f'%{query}%'),
             User.email.ilike(f'%{query}%'),
             User.user_id.ilike(f'%{query}%'),
-            User.cellphone.ilike(f'%{query}%')  # Add cellphone to search
+            User.cellphone.ilike(f'%{query}%')
         )
     ).all()
     
@@ -414,7 +452,7 @@ def search_employees():
             'id': emp.id,
             'name': f"{emp.name} {emp.surname}",
             'email': emp.email,
-            'cellphone': emp.cellphone,  # Add cellphone to results
+            'cellphone': emp.cellphone,
             'user_id': emp.user_id,
             'position': emp.position
         })
@@ -462,116 +500,39 @@ def admin_file_manager():
     files = FileFolder.query.filter_by(user_id=current_user.id).order_by(FileFolder.created_at.desc()).all()
     return render_template('admin/file_manager.html', files=files)
 
-@app.route('/admin/inbox')
+@app.route('/admin/leave-requests', methods=['GET', 'POST'])
 @login_required
-def admin_inbox():
+def admin_leave_requests():
     if current_user.role not in ['admin', 'both']:
         flash('Access denied', 'error')
         return redirect(url_for('employee_dashboard'))
     
-    received_messages = Message.query.filter_by(receiver_id=current_user.id).order_by(Message.created_at.desc()).all()
-    employees = User.query.filter_by(is_active=True).all()
+    leave_requests = LeaveRequest.query.order_by(LeaveRequest.created_at.desc()).all()
     
-    return render_template('admin/inbox.html', messages=received_messages, employees=employees)
-
-@app.route('/api/mark-message-read/<int:message_id>')
-@login_required
-def api_mark_message_read(message_id):
-    """API endpoint to mark message as read (for AJAX calls)"""
-    message = Message.query.get(message_id)
-    if message and message.receiver_id == current_user.id:
-        message.is_read = True
-        db.session.commit()
-        return jsonify({'success': True})
-    return jsonify({'success': False})
-
-@app.route('/admin/mark-message-read/<int:message_id>')
-@login_required
-def admin_mark_message_read(message_id):
-    """Admin endpoint to mark message as read (for button clicks)"""
-    message = Message.query.get(message_id)
-    if message and message.receiver_id == current_user.id:
-        message.is_read = True
-        db.session.commit()
-        flash('Message marked as read', 'success')
-    return redirect(url_for('admin_inbox'))
-
-@app.route('/reply-message', methods=['GET', 'POST'])
-@login_required
-def reply_message():
+    # Get employee names for display
+    employees = {emp.id: f"{emp.name} {emp.surname}" for emp in User.query.all()}
+    
     if request.method == 'POST':
-        reply_to_message_id = request.form.get('reply_to_message_id')
-        reply_to_sender_id = request.form.get('reply_to_sender_id')
-        subject = request.form.get('subject')
-        message_text = request.form.get('message')
-        file = request.files.get('file')
+        leave_id = request.form.get('leave_id')
+        action = request.form.get('action')
+        notes = request.form.get('notes', '')
         
-        # Validate required fields
-        if not all([reply_to_message_id, reply_to_sender_id, subject, message_text]):
-            flash('All fields are required', 'error')
-            return redirect(request.referrer or url_for('employee_inbox'))
-        
-        # Get the original message to verify permissions
-        original_message = Message.query.get(reply_to_message_id)
-        if not original_message or original_message.receiver_id != current_user.id:
-            flash('Invalid message or permission denied', 'error')
-            return redirect(request.referrer or url_for('employee_inbox'))
-        
-        # Handle file upload
-        file_path = None
-        file_name = None
-        if file and file.filename:
-            if allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = f"uploads/documents/{uuid.uuid4()}_{filename}"
-                file.save(file_path)
-                file_name = filename
-            else:
-                flash('File type not allowed', 'error')
-                return redirect(request.referrer or url_for('employee_inbox'))
-        
-        # Create reply message
-        reply_message = Message(
-            subject=subject,
-            message=message_text,
-            sender_id=current_user.id,
-            receiver_id=reply_to_sender_id,
-            file_path=file_path,
-            file_name=file_name
-        )
-        
-        try:
-            db.session.add(reply_message)
+        leave_request = LeaveRequest.query.get(leave_id)
+        if leave_request:
+            if action == 'approve':
+                leave_request.status = 'approved'
+                flash('Leave request approved', 'success')
+            elif action == 'reject':
+                leave_request.status = 'rejected'
+                flash('Leave request rejected', 'success')
+            
+            leave_request.admin_notes = notes
+            leave_request.updated_at = get_sa_time()
             db.session.commit()
-            flash('Reply sent successfully!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error sending reply: {e}")
-            flash('Error sending reply', 'error')
-        
-        # Redirect back to the appropriate inbox based on user role
-        if current_user.role in ['admin', 'both']:
-            return redirect(url_for('admin_inbox'))
-        else:
-            return redirect(url_for('employee_inbox'))
     
-    # If GET request, redirect to inbox
-    if current_user.role in ['admin', 'both']:
-        return redirect(url_for('admin_inbox'))
-    else:
-        return redirect(url_for('employee_inbox'))
-
-# Add employee specific mark message read
-@app.route('/employee/mark-message-read/<int:message_id>')
-@login_required
-def employee_mark_message_read(message_id):
-    """Employee endpoint to mark message as read (for button clicks)"""
-    message = Message.query.get(message_id)
-    if message and message.receiver_id == current_user.id:
-        message.is_read = True
-        db.session.commit()
-        flash('Message marked as read', 'success')
-    return redirect(url_for('employee_inbox'))
+    return render_template('admin/leave_requests.html', 
+                         leave_requests=leave_requests, 
+                         employees=employees)
 
 @app.route('/admin/todo', methods=['GET', 'POST'])
 @login_required
@@ -636,86 +597,75 @@ def admin_login_logs():
 def employee_dashboard():
     total_todos = Todo.query.filter_by(user_id=current_user.id).count()
     completed_todos = Todo.query.filter_by(user_id=current_user.id, is_completed=True).count()
-    unread_messages = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
     
     # Get notifications data
     notifications = Notification.query.order_by(Notification.created_at.desc()).limit(10).all()
     recent_notifications = Notification.query.order_by(Notification.created_at.desc()).limit(3).all()
     
-    # For demo purposes, we'll show all notifications as unread
-    # In a real app, you'd track which notifications each user has read
+    # Get leave requests for this employee
+    my_leaves = LeaveRequest.query.filter_by(employee_id=current_user.id).order_by(LeaveRequest.created_at.desc()).limit(5).all()
+    
+    # Calculate counts for leave status badges
+    pending_leaves_count = sum(1 for leave in my_leaves if leave.status == 'pending')
+    approved_leaves_count = sum(1 for leave in my_leaves if leave.status == 'approved')
+    rejected_leaves_count = sum(1 for leave in my_leaves if leave.status == 'rejected')
+    
+    # Get total files count
+    total_files = FileFolder.query.filter_by(user_id=current_user.id, is_folder=False).count()
+    
+    # Calculate unread notifications (simplified - all notifications are considered unread)
     unread_notifications = len(notifications)
     
     return render_template('employee/employee_dashboard.html',
                          total_todos=total_todos,
                          completed_todos=completed_todos,
-                         unread_messages=unread_messages,
                          unread_notifications=unread_notifications,
                          notifications=notifications,
-                         recent_notifications=recent_notifications)
-
-@app.route('/employee/messages', methods=['GET', 'POST'])
+                         recent_notifications=recent_notifications,
+                         my_leaves=my_leaves,
+                         total_files=total_files,
+                         pending_leaves_count=pending_leaves_count,
+                         approved_leaves_count=approved_leaves_count,
+                         rejected_leaves_count=rejected_leaves_count)
+@app.route('/employee/request-leave', methods=['GET', 'POST'])
 @login_required
-def employee_messages():
-    employees = User.query.filter(User.id != current_user.id, User.is_active == True).all()
-    
+def request_leave():
     if request.method == 'POST':
-        receiver_id = request.form['receiver_id']
-        subject = request.form['subject']
-        message_text = request.form['message']
-        file = request.files.get('file')
+        leave_type = request.form['leave_type']
+        start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d')
+        end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d')
+        reason = request.form['reason']
         
-        file_path = None
-        file_name = None
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = f"uploads/documents/{uuid.uuid4()}_{filename}"
-            file.save(file_path)
-            file_name = filename
+        # Validate dates
+        if start_date >= end_date:
+            flash('End date must be after start date', 'error')
+            return redirect(url_for('request_leave'))
         
-        new_message = Message(
-            subject=subject,
-            message=message_text,
-            sender_id=current_user.id,
-            receiver_id=receiver_id,
-            file_path=file_path,
-            file_name=file_name
+        leave_request = LeaveRequest(
+            employee_id=current_user.id,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            reason=reason
         )
-        db.session.add(new_message)
-        db.session.commit()
-        flash('Message sent successfully', 'success')
+        
+        try:
+            db.session.add(leave_request)
+            db.session.commit()
+            flash('Leave request submitted successfully', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error submitting leave request', 'error')
+        
+        return redirect(url_for('my_leaves'))
     
-    sent_messages = Message.query.filter_by(sender_id=current_user.id).order_by(Message.created_at.desc()).all()
-    return render_template('employee/messages.html', employees=employees, sent_messages=sent_messages)
+    return render_template('employee/request_leave.html')
 
-@app.route('/employee/search-employees')
+@app.route('/employee/my-leaves')
 @login_required
-def employee_search_employees():
-    query = request.args.get('q', '').lower()
-    employees = User.query.filter(
-        User.is_active == True,
-        User.id != current_user.id,
-        db.or_(
-            User.name.ilike(f'%{query}%'),
-            User.surname.ilike(f'%{query}%'),
-            User.email.ilike(f'%{query}%'),
-            User.user_id.ilike(f'%{query}%'),
-            User.cellphone.ilike(f'%{query}%')  # Add cellphone to search
-        )
-    ).all()
-    
-    results = []
-    for emp in employees:
-        results.append({
-            'id': emp.id,
-            'name': f"{emp.name} {emp.surname}",
-            'email': emp.email,
-            'cellphone': emp.cellphone,  # Add cellphone to results
-            'user_id': emp.user_id,
-            'position': emp.position
-        })
-    
-    return jsonify(results)
+def my_leaves():
+    leaves = LeaveRequest.query.filter_by(employee_id=current_user.id).order_by(LeaveRequest.created_at.desc()).all()
+    return render_template('employee/my_leaves.html', leaves=leaves)
 
 @app.route('/employee/file-manager', methods=['GET', 'POST'])
 @login_required
@@ -727,7 +677,6 @@ def employee_file_manager():
     if folder_id:
         current_folder = FileFolder.query.filter_by(id=folder_id, user_id=current_user.id, is_folder=True).first()
         if current_folder:
-            # Build folder path
             folder = current_folder
             while folder:
                 folder_path.insert(0, folder)
@@ -784,13 +733,11 @@ def employee_file_manager():
             db.session.commit()
             flash('Folder created successfully', 'success')
     
-    # Get files and folders for current location
     if current_folder:
         files = FileFolder.query.filter_by(parent_id=current_folder.id, user_id=current_user.id).order_by(FileFolder.is_folder.desc(), FileFolder.name).all()
     else:
         files = FileFolder.query.filter_by(parent_id=None, user_id=current_user.id).order_by(FileFolder.is_folder.desc(), FileFolder.name).all()
     
-    # Get all folders for dropdowns
     all_folders = FileFolder.query.filter_by(user_id=current_user.id, is_folder=True).all()
     
     return render_template('employee/file_manager.html', 
@@ -805,11 +752,9 @@ def delete_file(file_id):
     file_item = FileFolder.query.get(file_id)
     if file_item and file_item.user_id == current_user.id and not file_item.is_folder:
         try:
-            # Delete physical file
             if os.path.exists(file_item.file_path):
                 os.remove(file_item.file_path)
             
-            # Delete database record
             db.session.delete(file_item)
             db.session.commit()
             return jsonify({'success': True, 'message': 'File deleted successfully'})
@@ -825,18 +770,15 @@ def delete_folder(folder_id):
     folder = FileFolder.query.get(folder_id)
     if folder and folder.user_id == current_user.id and folder.is_folder:
         try:
-            # Recursively delete folder contents
             def delete_folder_contents(folder_id):
                 contents = FileFolder.query.filter_by(parent_id=folder_id, user_id=current_user.id).all()
                 for item in contents:
                     if item.is_folder:
                         delete_folder_contents(item.id)
                     else:
-                        # Delete physical file
                         if os.path.exists(item.file_path):
                             os.remove(item.file_path)
                         db.session.delete(item)
-                # Delete the folder itself
                 folder_to_delete = FileFolder.query.get(folder_id)
                 if folder_to_delete:
                     db.session.delete(folder_to_delete)
@@ -849,23 +791,6 @@ def delete_folder(folder_id):
             return jsonify({'success': False, 'message': str(e)})
     
     return jsonify({'success': False, 'message': 'Folder not found or access denied'})
-
-@app.route('/employee/inbox')
-@login_required
-def employee_inbox():
-    # Get received messages
-    received_messages = Message.query.filter_by(receiver_id=current_user.id).order_by(Message.created_at.desc()).all()
-    
-    # Get all employees to display sender information
-    employees = User.query.all()  # Fixed typo
-    
-    # Create a dictionary for easy employee lookup
-    employee_dict = {emp.id: emp for emp in employees}
-    
-    return render_template('employee/inbox.html', 
-                         messages=received_messages, 
-                         employees=employee_dict,
-                         current_user=current_user)
 
 @app.route('/employee/todo', methods=['GET', 'POST'])
 @login_required
@@ -920,39 +845,24 @@ def download_file(file_id):
     flash('File not found', 'error')
     return redirect(request.referrer)
 
-@app.route('/download-message-file/<int:message_id>')
-@login_required
-def download_message_file(message_id):
-    message = Message.query.get(message_id)
-    if message and (message.sender_id == current_user.id or message.receiver_id == current_user.id) and message.file_path:
-        return send_file(message.file_path, as_attachment=True, download_name=message.file_name)
-    flash('File not found', 'error')
-    return redirect(request.referrer)
-
 @app.route('/employee/notifications')
 @login_required
 def employee_notifications():
-    # Get all notifications (admin sends to all employees, so no specific receiver_id)
     notifications = Notification.query.order_by(Notification.created_at.desc()).all()
     return render_template('employee/notifications.html', notifications=notifications)
 
 @app.route('/api/mark-notification-read/<int:notification_id>')
 @login_required
 def mark_notification_read(notification_id):
-    # In a real application, you might want to track which user read which notification
-    # For now, we'll just return success since notifications are sent to all employees
     return jsonify({'success': True})
 
 @app.route('/api/check-new-notifications')
 @login_required
 def check_new_notifications():
-    # This is a simplified version - in a real app, you'd track which notifications each user has read
-    # For now, we'll just check if there are any recent notifications
     recent_notification = Notification.query.order_by(Notification.created_at.desc()).first()
     if recent_notification:
-        # Check if notification is from the last 5 minutes
-        time_diff = datetime.utcnow() - recent_notification.created_at
-        if time_diff.total_seconds() < 300:  # 5 minutes
+        time_diff = get_sa_time() - recent_notification.created_at
+        if time_diff.total_seconds() < 300:
             return jsonify({'has_new_notifications': True})
     return jsonify({'has_new_notifications': False})
 
@@ -960,11 +870,10 @@ def check_new_notifications():
 @login_required
 def profile():
     if request.method == 'POST':
-        # Handle profile updates
         current_user.name = request.form['name']
         current_user.surname = request.form['surname']
         current_user.email = request.form['email']
-        current_user.cellphone = request.form['cellphone']  # New field
+        current_user.cellphone = request.form['cellphone']
         current_user.position = request.form['position']
         
         try:
@@ -974,36 +883,21 @@ def profile():
             db.session.rollback()
             flash('Error updating profile', 'error')
     
-    # Get statistics for the profile page
     total_todos = Todo.query.filter_by(user_id=current_user.id).count()
     completed_todos = Todo.query.filter_by(user_id=current_user.id, is_completed=True).count()
     total_files = FileFolder.query.filter_by(user_id=current_user.id, is_folder=False).count()
-    total_messages_sent = Message.query.filter_by(sender_id=current_user.id).count()
     
-    # Get recent activity
     recent_logins = LoginLog.query.filter_by(user_id=current_user.id).order_by(LoginLog.login_time.desc()).limit(5).all()
-    
-    recent_messages = Message.query.filter_by(sender_id=current_user.id).order_by(Message.created_at.desc()).limit(3).all()
     
     recent_todos = Todo.query.filter_by(user_id=current_user.id).order_by(Todo.created_at.desc()).limit(2).all()
     
-    # Pre-process recent messages to include receiver information
-    processed_messages = []
-    for message in recent_messages:
-        receiver = User.query.get(message.receiver_id)
-        processed_messages.append({
-            'message': message,
-            'receiver_name': f"{receiver.name} {receiver.surname}" if receiver else "Unknown User"
-        })
-    
-    # Admin statistics (only calculate if user is admin)
     admin_stats = {}
     if current_user.role in ['admin', 'both']:
         admin_stats = {
             'total_employees': User.query.filter_by(is_active=True).count(),
             'total_notifications': Notification.query.count(),
-            'total_messages': Message.query.count(),
-            'active_tasks': Todo.query.filter_by(is_completed=False).count()
+            'active_tasks': Todo.query.filter_by(is_completed=False).count(),
+            'pending_leaves': LeaveRequest.query.filter_by(status='pending').count()
         }
     
     return render_template('profile.html', 
@@ -1011,43 +905,34 @@ def profile():
                          total_todos=total_todos,
                          completed_todos=completed_todos,
                          total_files=total_files,
-                         total_messages_sent=total_messages_sent,
                          recent_logins=recent_logins,
-                         processed_messages=processed_messages,
                          recent_todos=recent_todos,
                          admin_stats=admin_stats)
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
-
-# Initialize database and create admin user
+# Initialize database
 def init_db():
     try:
-        db.create_all()
-        
-        # Create default admin user if not exists
-        admin = User.query.filter_by(email='admin@maxelobs.com').first()
-        if not admin:
-            admin_user = User(
-                user_id='MAXELOBS-202500',
-                name='Katlego',
-                surname='Papala',
-                email='admin@maxelobs.com',
-                cellphone='0123456789',
-                position='System Administrator',
-                role='both'
-            )
-            admin_user.set_password('Admin@123')
-            db.session.add(admin_user)
-            db.session.commit()
-            print("Default admin user created!")
+        with app.app_context():
+            db.create_all()
+            
+            admin = User.query.filter_by(email='admin@maxelobs.com').first()
+            if not admin:
+                admin_user = User(
+                    user_id='MAXELOBS-202500',
+                    name='Katlego',
+                    surname='Papala',
+                    email='admin@maxelobs.com',
+                    cellphone='0123456789',
+                    position='System Administrator',
+                    role='both'
+                )
+                admin_user.set_password('Admin@123')
+                db.session.add(admin_user)
+                db.session.commit()
+                print("Default admin user created!")
     except Exception as e:
         print(f"Error initializing database: {e}")
 
-# Remove the if __name__ == '__main__' block and replace with:
 if __name__ == '__main__':
-    with app.app_context():
-        init_db()
-    app.run(debug=False)
+    init_db()
+    app.run(debug=True)

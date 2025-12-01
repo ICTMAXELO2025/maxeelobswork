@@ -100,20 +100,29 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .btn-danger {
-            background-color: var(--danger-color);
+        .btn-success {
+            background-color: var(--success-color);
         }
 
-        .btn-danger:hover {
-            background-color: #c82333;
+        .btn-success:hover {
+            background-color: #218838;
         }
 
-        .btn-cancel {
-            background-color: var(--gray-color);
+        .btn-info {
+            background-color: var(--info-color);
         }
 
-        .btn-cancel:hover {
-            background-color: #5a6268;
+        .btn-info:hover {
+            background-color: #138496;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
         }
 
         /* Main Container */
@@ -169,6 +178,18 @@
             font-size: 2.5rem;
             font-weight: 700;
             color: var(--primary-color);
+        }
+
+        .stat-card:nth-child(2) .stat-number {
+            color: var(--success-color);
+        }
+
+        .stat-card:nth-child(3) .stat-number {
+            color: var(--warning-color);
+        }
+
+        .stat-card:nth-child(4) .stat-number {
+            color: var(--info-color);
         }
 
         /* Form Container */
@@ -234,11 +255,21 @@
             font-size: 1.3rem;
             margin-bottom: 10px;
             color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-item p {
             color: var(--gray-color);
         }
+
+        /* Icon styles for navigation items */
+        .nav-item:nth-child(1) h3::before { content: '📁'; }
+        .nav-item:nth-child(2) h3::before { content: '📝'; }
+        .nav-item:nth-child(3) h3::before { content: '🌴'; }
+        .nav-item:nth-child(4) h3::before { content: '📢'; }
+        .nav-item:nth-child(5) h3::before { content: '👤'; }
 
         /* Table Container */
         .table-container {
@@ -318,6 +349,57 @@
         .preview-actions {
             display: flex;
             gap: 8px;
+        }
+
+        /* Leave Requests Table */
+        .leave-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .leave-table th,
+        .leave-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .leave-table th {
+            background: var(--light-color);
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .leave-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-warning {
+            background: var(--warning-color);
+            color: black;
+        }
+
+        .badge-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .badge-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .badge-info {
+            background: var(--info-color);
+            color: white;
         }
 
         /* Modal Styles */
@@ -411,6 +493,27 @@
         .read-status {
             color: var(--success-color);
             font-weight: bold;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .mt-3 {
+            margin-top: 1rem;
+        }
+
+        .ms-2 {
+            margin-left: 0.5rem;
+        }
+
+        .py-3 {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
         }
 
         /* Animations */
@@ -605,6 +708,7 @@
             </div>
         </div>
 
+        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <h3>Total Tasks</h3>
@@ -614,90 +718,47 @@
                 <h3>Completed Tasks</h3>
                 <div class="stat-number">{{ completed_todos }}</div>
             </div>
+           
             <div class="stat-card">
-                <h3>Unread Messages</h3>
-                <div class="stat-number">{{ unread_messages }}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Unread Notifications</h3>
-                <div class="stat-number" id="unreadNotificationsCount">{{ unread_notifications }}</div>
+                <h3>My Leave Requests</h3>
+                <div class="stat-number">{{ my_leaves|length }}</div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="form-container">
-            <h3>Quick Actions</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="openNotificationsModal()" class="btn" style="background: var(--warning-color); color: black;">
-                    📢 View Notifications ({{ unread_notifications }} unread)
-                </button>
-                <a href="{{ url_for('employee_todo') }}" class="btn" style="background: var(--info-color);">
-                    📝 Quick Add Task
-                </a>
-                <a href="{{ url_for('employee_messages') }}" class="btn" style="background: var(--success-color);">
-                    ✉️ Compose Message
-                </a>
-            </div>
-        </div>
+     
 
+        <!-- Dashboard Navigation -->
         <div class="dashboard-nav">
             <div class="nav-grid">
-                <a href="{{ url_for('employee_messages') }}" class="nav-item">
-                    <h3>Messages</h3>
-                    <p>Send messages to colleagues</p>
-                </a>
                 <a href="{{ url_for('employee_file_manager') }}" class="nav-item">
                     <h3>File Manager</h3>
                     <p>Manage your files and folders</p>
                 </a>
-                <a href="{{ url_for('employee_inbox') }}" class="nav-item">
-                    <h3>Inbox</h3>
-                    <p>Check your messages</p>
-                </a>
                 <a href="{{ url_for('employee_todo') }}" class="nav-item">
                     <h3>To-Do List</h3>
-                    <p>Manage your tasks</p>
+                    <p>Manage your tasks and deadlines</p>
                 </a>
-                <a href="javascript:void(0)" onclick="openNotificationsModal()" class="nav-item" style="background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%); color: black;">
+                <a href="{{ url_for('request_leave') }}" class="nav-item" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                    <h3>Request Leave</h3>
+                    <p>Submit leave requests and view status</p>
+                </a>
+                <a href="{{ url_for('my_leaves') }}" class="nav-item" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                    <h3>View Requested Leaves</h3>
+                    <p>View all your leaves</p>
+                </a>
+                 <a href="{{ url_for('employee_notifications') }}" class="nav-item" style="background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%); color: black;">
                     <h3>Notifications</h3>
-                    <p>View admin announcements</p>
-                    {% if unread_notifications > 0 %}
-                    <span class="notification-badge">{{ unread_notifications }}</span>
-                    {% endif %}
+                    <p>View announcements</p>
                 </a>
+
+
+                
             </div>
         </div>
 
-        <!-- Recent Notifications Preview -->
-        {% if recent_notifications %}
-        <div class="table-container">
-            <h3>Recent Notifications</h3>
-            <div class="notifications-preview">
-                {% for notification in recent_notifications %}
-                <div class="notification-preview-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                    <div class="preview-header">
-                        <strong>{{ notification.title }}</strong>
-                        <small>{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                    </div>
-                    <p class="preview-message">{{ notification.message[:100] }}{% if notification.message|length > 100 %}...{% endif %}</p>
-                    <div class="preview-actions">
-                        <button onclick="viewFullNotification({{ notification.id }})" class="btn-small">
-                            View Full
-                        </button>
-                        {% if not notification.is_read %}
-                        <button onclick="markNotificationAsRead({{ notification.id }})" class="btn-small" style="background: var(--gray-color);">
-                            Mark Read
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div style="text-align: center; margin-top: 15px;">
-                <button onclick="openNotificationsModal()" class="btn-small">View All Notifications</button>
-            </div>
-        </div>
-        {% endif %}
+       
+
+       
     </div>
 
     <script>
@@ -822,6 +883,62 @@
             statCards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.1}s`;
             });
+
+            // Add pulse animation to notifications if there are unread
+            const unreadNotifications = {{ unread_notifications }};
+            if (unreadNotifications > 0) {
+                const notificationCard = document.querySelector('.stat-card:nth-child(3)');
+                if (notificationCard) {
+                    notificationCard.style.animation = 'pulse 2s ease 3';
+                }
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Alt + N for notifications
+            if (e.altKey && e.key === 'n') {
+                e.preventDefault();
+                openNotificationsModal();
+            }
+            // Alt + L for leave request
+            if (e.altKey && e.key === 'l') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('request_leave') }}";
+            }
+            // Alt + T for todo
+            if (e.altKey && e.key === 't') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('employee_todo') }}";
+            }
+            // Alt + F for file manager
+            if (e.altKey && e.key === 'f') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('employee_file_manager') }}";
+            }
+        });
+
+        // Show keyboard shortcuts help
+        function showKeyboardShortcuts() {
+            alert('Keyboard Shortcuts:\n\n' +
+                  'Alt + N - Notifications\n' +
+                  'Alt + L - Request Leave\n' +
+                  'Alt + T - To-Do List\n' +
+                  'Alt + F - File Manager');
+        }
+
+        // Add keyboard shortcuts info to quick actions
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickActions = document.querySelector('.form-container .btn');
+            if (quickActions) {
+                const helpBtn = document.createElement('button');
+                helpBtn.className = 'btn-small';
+                helpBtn.style.background = 'var(--gray-color)';
+                helpBtn.style.marginLeft = '10px';
+                helpBtn.innerHTML = '⌨️ Keyboard Shortcuts';
+                helpBtn.onclick = showKeyboardShortcuts;
+                quickActions.parentNode.appendChild(helpBtn);
+            }
         });
     </script>
 </body>

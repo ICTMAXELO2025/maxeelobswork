@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Leave - Maxelo Business Solutions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 0;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-info span {
+            font-weight: 500;
+        }
+
+        /* Button Styles */
+        .btn, .btn-small {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover, .btn-small:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background-color: var(--gray-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 30px;
+            animation: slideUp 0.6s ease;
+        }
+
+        .page-header h2 {
+            color: var(--dark-color);
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-header h2::before {
+            content: '📝';
+            font-size: 1.2em;
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+            overflow: hidden;
+            animation: slideUp 0.7s ease;
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .card-header {
+            padding: 20px 30px;
+            background: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header h4, .card-header h5 {
+            color: var(--dark-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header h4::before {
+            content: '📄';
+            font-size: 1.1em;
+        }
+
+        .card-header h5::before {
+            content: '📋';
+            font-size: 1.1em;
+        }
+
+        .card-body {
+            padding: 30px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-color);
+            font-size: 1rem;
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: var(--danger-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: #f8f9fa;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-control.error {
+            border-color: var(--danger-color);
+            background: #fff5f5;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        /* Duration Display */
+        .duration-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--info-color);
+            animation: fadeIn 0.8s ease;
+        }
+
+        .duration-display h4 {
+            color: var(--info-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .duration-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Form Helpers */
+        .form-help {
+            color: var(--gray-color);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .form-help.error {
+            color: var(--danger-color);
+            font-weight: 500;
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        /* Policy List */
+        .policy-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .policy-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .policy-list li:last-child {
+            border-bottom: none;
+        }
+
+        .policy-list li::before {
+            content: '✓';
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        /* Leave Type Colors */
+        .leave-type-option {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            transition: var(--transition);
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .leave-type-option:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .leave-type-option.selected {
+            background: rgba(102, 126, 234, 0.15);
+            border-color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .user-info .btn-small {
+                width: 100%;
+            }
+
+            .dashboard-container {
+                margin: 15px auto;
+                padding: 0 15px;
+            }
+
+            .card-header, .card-body {
+                padding: 20px;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+            }
+
+            .duration-display {
+                padding: 15px;
+            }
+
+            .duration-value {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h2 {
+                font-size: 1.2rem;
+            }
+
+            .page-header h2 {
+                font-size: 1.4rem;
+            }
+
+            .form-control {
+                padding: 12px 14px;
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Validation Styles */
+        .validation-error {
+            border-color: var(--danger-color) !important;
+            animation: shake 0.5s ease;
+        }
+
+        .validation-success {
+            border-color: var(--success-color) !important;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="logo">
+                <h2>Leave Request - Maxelo Business Solutions</h2>
+            </div>
+            <div class="user-info">
+                <span>Welcome, {{ current_user.name }} {{ current_user.surname }}</span>
+                <a href="{{ url_for('my_leaves') }}" class="btn-small">
+                    <i class="fas fa-history"></i> My Leaves
+                </a>
+                <a href="{{ url_for('employee_dashboard') }}" class="btn-small">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn-small">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="page-header">
+            <h2>Request Leave</h2>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h4>New Leave Request Form</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('request_leave') }}" id="leaveForm">
+                    <div class="form-group">
+                        <label for="leave_type" class="form-label required">Leave Type</label>
+                        <select class="form-control" id="leave_type" name="leave_type" required>
+                            <option value="">Select Leave Type</option>
+                            <option value="Annual Leave">Annual Leave</option>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Maternity Leave">Maternity Leave</option>
+                            <option value="Paternity Leave">Paternity Leave</option>
+                            <option value="Study Leave">Study Leave</option>
+                            <option value="Unpaid Leave">Unpaid Leave</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span class="form-help">Please select the type of leave you are requesting</span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="start_date" class="form-label required">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                            <span class="form-help">Select the first day of your leave</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="end_date" class="form-label required">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                            <span class="form-help">Select the last day of your leave</span>
+                        </div>
+                    </div>
+                    
+                    <div id="durationDisplay" class="duration-display" style="display: none;">
+                        <h4>Leave Duration</h4>
+                        <div class="duration-value" id="durationValue">0 days</div>
+                        <small class="form-help">Total working days requested</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reason" class="form-label required">Reason for Leave</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="5" required 
+                                  placeholder="Please provide a detailed explanation for your leave request. Include any relevant information that will help with the approval process."></textarea>
+                        <span class="form-help">Be specific about why you need this leave</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-help" style="color: var(--danger-color);">
+                            <i class="fas fa-exclamation-circle"></i> All fields marked with * are required. Your leave request will be reviewed by administration.
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="{{ url_for('my_leaves') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn" id="submitBtn">
+                            <i class="fas fa-paper-plane"></i> Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Leave Policy & Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul class="policy-list">
+                    <li>Submit leave requests at least <strong>2 weeks</strong> in advance</li>
+                    <li><strong>Annual leave:</strong> 15 days per year (prorated based on start date)</li>
+                    <li><strong>Sick leave:</strong> 30 days per year (requires medical certificate)</li>
+                    <li><strong>Maternity leave:</strong> 4 months (must provide proof of pregnancy)</li>
+                    <li><strong>Paternity leave:</strong> 10 days (must provide birth certificate)</li>
+                    <li><strong>Study leave:</strong> Subject to manager approval and proof of enrollment</li>
+                    <li><strong>Unpaid leave:</strong> Maximum 30 days per year, subject to approval</li>
+                    <li>All leaves are subject to management approval and staffing requirements</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Calculate leave duration
+        function calculateDuration() {
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            const durationDisplay = document.getElementById('durationDisplay');
+            const durationValue = document.getElementById('durationValue');
+            
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                // Calculate difference in days
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                
+                // Show duration display
+                durationDisplay.style.display = 'block';
+                durationValue.textContent = `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+                
+                // Add visual feedback based on duration
+                if (diffDays > 30) {
+                    durationValue.style.color = 'var(--warning-color)';
+                } else if (diffDays > 14) {
+                    durationValue.style.color = 'var(--info-color)';
+                } else {
+                    durationValue.style.color = 'var(--success-color)';
+                }
+            } else {
+                durationDisplay.style.display = 'none';
+            }
+        }
+
+        // Validate dates
+        function validateDates() {
+            const startDate = document.getElementById('start_date');
+            const endDate = document.getElementById('end_date');
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (startDate.value && startDate.value < today) {
+                startDate.classList.add('validation-error');
+                startDate.nextElementSibling.textContent = 'Start date cannot be in the past';
+                startDate.nextElementSibling.classList.add('error');
+                return false;
+            }
+            
+            if (endDate.value && startDate.value && endDate.value < startDate.value) {
+                endDate.classList.add('validation-error');
+                endDate.nextElementSibling.textContent = 'End date cannot be before start date';
+                endDate.nextElementSibling.classList.add('error');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Clear validation errors
+        function clearValidation(element) {
+            element.classList.remove('validation-error', 'validation-success');
+            const helpText = element.nextElementSibling;
+            if (helpText) {
+                helpText.textContent = helpText.dataset.original || '';
+                helpText.classList.remove('error');
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('leaveForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Validate form
+            if (!validateDates()) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Submitting...';
+            
+            // Re-enable after 5 seconds (in case of error)
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }, 5000);
+        });
+
+        // Event listeners
+        document.getElementById('start_date').addEventListener('change', function() {
+            calculateDuration();
+            clearValidation(this);
+            validateDates();
+            
+            // Set minimum end date
+            const endDate = document.getElementById('end_date');
+            if (this.value) {
+                endDate.min = this.value;
+            }
+        });
+
+        document.getElementById('end_date').addEventListener('change', function() {
+            calculateDuration();
+            clearValidation(this);
+            validateDates();
+        });
+
+        document.getElementById('leave_type').addEventListener('change', function() {
+            clearValidation(this);
+            
+            // Show additional notes based on leave type
+            const reasonField = document.getElementById('reason');
+            const placeholder = reasonField.placeholder;
+            const basePlaceholder = "Please provide a detailed explanation for your leave request. Include any relevant information that will help with the approval process.";
+            
+            let additionalNote = "";
+            switch(this.value) {
+                case 'Sick Leave':
+                    additionalNote = " Please attach a medical certificate.";
+                    break;
+                case 'Maternity Leave':
+                    additionalNote = " Please provide proof of pregnancy.";
+                    break;
+                case 'Paternity Leave':
+                    additionalNote = " Please provide a copy of the birth certificate.";
+                    break;
+                case 'Study Leave':
+                    additionalNote = " Please attach proof of enrollment.";
+                    break;
+            }
+            
+            reasonField.placeholder = basePlaceholder + additionalNote;
+        });
+
+        // Store original help text
+        document.querySelectorAll('.form-help').forEach(el => {
+            el.dataset.original = el.textContent;
+        });
+
+        // Initialize date inputs with tomorrow as minimum
+        document.addEventListener('DOMContentLoaded', function() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            
+            const startDate = document.getElementById('start_date');
+            startDate.min = tomorrowStr;
+            startDate.value = tomorrowStr;
+            
+            const endDate = document.getElementById('end_date');
+            endDate.min = tomorrowStr;
+            endDate.value = tomorrowStr;
+            
+            // Initial calculation
+            calculateDuration();
+        });
+    </script>
+</body>
+</html>

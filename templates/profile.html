@@ -206,6 +206,29 @@
             letter-spacing: 0.5px;
         }
 
+        /* Role Selection Banner */
+        .role-banner {
+            background: linear-gradient(135deg, var(--warning-color), #ff8c00);
+            color: black;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            text-align: center;
+            animation: slideDown 0.5s ease;
+        }
+
+        .role-banner h3 {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .role-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
         /* Edit Form Styles */
         .edit-form {
             display: none;
@@ -499,6 +522,10 @@
                 font-size: 2.2rem;
             }
 
+            .role-options {
+                flex-direction: column;
+            }
+
             table {
                 display: block;
                 overflow-x: auto;
@@ -578,16 +605,42 @@
             </div>
             <div class="user-info">
                 <span>Welcome, {{ user.name }} {{ user.surname }}</span>
-                {% if user.role in ['admin', 'both'] %}
+                {% if user.role == 'admin' %}
                     <a href="{{ url_for('admin_dashboard') }}" class="btn-small">Admin Dashboard</a>
+                {% elif user.role == 'employee' %}
+                    <a href="{{ url_for('employee_dashboard') }}" class="btn-small">Employee Dashboard</a>
+                {% elif session.get('selected_role') %}
+                    {% if session.selected_role == 'admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn-small">Admin Dashboard</a>
+                    {% else %}
+                        <a href="{{ url_for('employee_dashboard') }}" class="btn-small">Employee Dashboard</a>
+                    {% endif %}
                 {% endif %}
-                <a href="{{ url_for('employee_dashboard') }}" class="btn-small">Employee Dashboard</a>
                 <a href="{{ url_for('logout') }}" class="btn-small">Logout</a>
             </div>
         </div>
     </header>
 
     <div class="dashboard-container">
+        <!-- Role Selection Banner for users with both roles -->
+        {% if user.role == 'both' and not session.get('selected_role') %}
+        <div class="role-banner">
+            <h3>🎯 Select Your Dashboard</h3>
+            <p>Please choose which dashboard you want to access:</p>
+            <div class="role-options">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn" style="background: var(--danger-color);">
+                    👑 Admin Dashboard
+                </a>
+                <a href="{{ url_for('employee_dashboard') }}" class="btn" style="background: var(--success-color);">
+                    👨‍💼 Employee Dashboard
+                </a>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.9rem;">
+                <em>Your selection will be remembered for this session</em>
+            </p>
+        </div>
+        {% endif %}
+
         <div class="action-buttons">
             <button onclick="printProfile()" class="btn-small" style="background: var(--info-color);">🖨️ Print Profile</button>
             <button onclick="exportProfile()" class="btn-small" style="background: var(--success-color);">📥 Export Profile</button>
@@ -632,8 +685,10 @@
                             <input type="text" id="position" name="position" value="{{ user.position }}" required>
                         </div>
                         <div class="form-group">
-                            <label>Role (Cannot be changed)</label>
-                            <input type="text" value="{{ user.role|upper }}" disabled style="background: #f8f9fa; color: var(--gray-color);">
+                            <label>Current Role</label>
+                            <input type="text" value="{{ 
+                                session.get('selected_role', user.role)|upper if user.role == 'both' else user.role|upper 
+                            }}" disabled style="background: #f8f9fa; color: var(--gray-color);">
                         </div>
                     </div>
                     <div class="form-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
@@ -673,13 +728,14 @@
                         <p>{{ user.position }}</p>
                     </div>
                     <div class="info-item">
-                        <label>Role</label>
+                        <label>Current Role</label>
                         <p>
+                            {% set display_role = session.get('selected_role', user.role) if user.role == 'both' else user.role %}
                             <span class="role-badge" style="background: 
-                                {% if user.role == 'admin' %}var(--danger-color)
-                                {% elif user.role == 'employee' %}var(--success-color)
+                                {% if display_role == 'admin' %}var(--danger-color)
+                                {% elif display_role == 'employee' %}var(--success-color)
                                 {% else %}var(--primary-color){% endif %}; color: white;">
-                                {{ user.role|upper }}
+                                {{ display_role|upper }}
                             </span>
                         </p>
                     </div>
@@ -772,7 +828,7 @@
             {% endif %}
         </div>
 
-        {% if user.role in ['admin', 'both'] and admin_stats %}
+        {% if (user.role == 'admin' or (user.role == 'both' and session.get('selected_role') == 'admin')) and admin_stats %}
         <div class="table-container">
             <h3>Admin Statistics</h3>
             <div class="stats-grid">
@@ -789,9 +845,9 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <h3>Total Messages</h3>
+                    <h3>Pending Leaves</h3>
                     <div class="stat-number">
-                        {{ admin_stats.total_messages }}
+                        {{ admin_stats.pending_leaves }}
                     </div>
                 </div>
                 <div class="stat-card">
@@ -839,13 +895,16 @@
             exportBtn.disabled = true;
             exportBtn.innerHTML = '<span class="loading"></span> Exporting...';
             
+            // Get current role for display
+            const currentRole = "{{ session.get('selected_role', user.role) if user.role == 'both' else user.role }}";
+            
             const profileData = {
                 name: '{{ user.name }} {{ user.surname }}',
                 user_id: '{{ user.user_id }}',
                 email: '{{ user.email }}',
                 cellphone: '{{ user.cellphone if user.cellphone else "Not provided" }}',
                 position: '{{ user.position }}',
-                role: '{{ user.role }}',
+                current_role: currentRole,
                 account_created: '{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}',
                 statistics: {
                     total_tasks: {{ total_todos }},
@@ -856,11 +915,11 @@
             };
             
             // Add admin stats if available
-            {% if user.role in ['admin', 'both'] and admin_stats %}
+            {% if (user.role == 'admin' or (user.role == 'both' and session.get('selected_role') == 'admin')) and admin_stats %}
             profileData.admin_statistics = {
                 total_employees: {{ admin_stats.total_employees }},
                 total_notifications: {{ admin_stats.total_notifications }},
-                total_messages: {{ admin_stats.total_messages }},
+                pending_leaves: {{ admin_stats.pending_leaves }},
                 active_tasks: {{ admin_stats.active_tasks }}
             };
             {% endif %}
@@ -929,17 +988,6 @@
             }, 3000);
         });
 
-        // Auto-refresh activity every 60 seconds
-        setTimeout(function() {
-            const refreshBtn = document.querySelector('button[onclick="refreshProfile()"]');
-            if (refreshBtn) {
-                refreshBtn.style.animation = 'pulse 1s ease';
-                setTimeout(() => {
-                    refreshBtn.style.animation = '';
-                }, 1000);
-            }
-        }, 60000);
-
         // Search functionality for activity table
         document.addEventListener('DOMContentLoaded', function() {
             const activitySearch = document.getElementById('activitySearch');
@@ -982,7 +1030,25 @@
             statCards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.15}s`;
             });
+
+            // Auto-refresh page every 5 minutes for role-both users without selection
+            {% if user.role == 'both' and not session.get('selected_role') %}
+            setTimeout(function() {
+                window.location.reload();
+            }, 300000); // 5 minutes
+            {% endif %}
         });
+
+        // Switch role for users with both roles
+        function switchRole(role) {
+            fetch('/api/switch-role/' + role)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    }
+                });
+        }
     </script>
 </body>
 </html>

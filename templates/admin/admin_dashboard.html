@@ -171,6 +171,10 @@
             color: var(--warning-color);
         }
 
+        .stat-card:nth-child(4) .stat-number {
+            color: var(--success-color);
+        }
+
         /* Dashboard Navigation */
         .dashboard-nav {
             margin-bottom: 30px;
@@ -236,11 +240,11 @@
         /* Icon styles for navigation items */
         .nav-item:nth-child(1) h3::before { content: '👥'; }
         .nav-item:nth-child(2) h3::before { content: '📢'; }
-        .nav-item:nth-child(3) h3::before { content: '✉️'; }
-        .nav-item:nth-child(4) h3::before { content: '📁'; }
-        .nav-item:nth-child(5) h3::before { content: '📥'; }
-        .nav-item:nth-child(6) h3::before { content: '📝'; }
-        .nav-item:nth-child(7) h3::before { content: '📊'; }
+        .nav-item:nth-child(3) h3::before { content: '📁'; }
+        .nav-item:nth-child(4) h3::before { content: '🌴'; }
+        .nav-item:nth-child(5) h3::before { content: '📝'; }
+        .nav-item:nth-child(6) h3::before { content: '📊'; }
+        .nav-item:nth-child(7) h3::before { content: '👤'; }
 
         /* Animations */
         @keyframes fadeIn {
@@ -331,51 +335,6 @@
             }
         }
 
-        /* Loading Animation */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Quick Actions Section */
-        .quick-actions {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: var(--box-shadow);
-            animation: slideUp 0.7s ease;
-        }
-
-        .quick-actions h3 {
-            margin-bottom: 20px;
-            color: var(--primary-color);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .quick-actions h3::before {
-            content: '⚡';
-            font-size: 1.2em;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
         /* System Status */
         .system-status {
             background: white;
@@ -429,6 +388,73 @@
         .status-indicator.danger {
             background: var(--danger-color);
         }
+
+        /* Recent Leaves Table */
+        .recent-leaves-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .recent-leaves-table th,
+        .recent-leaves-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .recent-leaves-table th {
+            background: var(--light-color);
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .recent-leaves-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-warning {
+            background: var(--warning-color);
+            color: black;
+        }
+
+        .badge-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .badge-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .mt-3 {
+            margin-top: 1rem;
+        }
+
+        .ms-2 {
+            margin-left: 0.5rem;
+        }
+
+        .py-3 {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -446,45 +472,9 @@
     </header>
 
     <div class="dashboard-container">
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <h3>Quick Actions</h3>
-            <div class="action-buttons">
-                <a href="{{ url_for('send_notification') }}" class="btn-small" style="background: var(--warning-color); color: black;">
-                    📢 Send Quick Notification
-                </a>
-                <a href="{{ url_for('manage_employees') }}" class="btn-small" style="background: var(--info-color);">
-                    👥 Add New Employee
-                </a>
-                <a href="{{ url_for('admin_messages') }}" class="btn-small" style="background: var(--success-color);">
-                    ✉️ Compose Message
-                </a>
-            </div>
-        </div>
+        
 
-        <!-- System Status -->
-        <div class="system-status">
-            <h3>System Status</h3>
-            <div class="status-items">
-                <div class="status-item">
-                    <div class="status-indicator"></div>
-                    <span>Application: Online</span>
-                </div>
-                <div class="status-item">
-                    <div class="status-indicator"></div>
-                    <span>Database: Connected</span>
-                </div>
-                <div class="status-item">
-                    <div class="status-indicator"></div>
-                    <span>File System: Active</span>
-                </div>
-                <div class="status-item">
-                    <div class="status-indicator"></div>
-                    <span>Users: {{ total_employees }} Active</span>
-                </div>
-            </div>
-        </div>
-
+        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <h3>Total Employees</h3>
@@ -492,17 +482,85 @@
                 <small>Active team members</small>
             </div>
             <div class="stat-card">
-                <h3>Total Messages</h3>
-                <div class="stat-number">{{ total_messages }}</div>
-                <small>System-wide communications</small>
+                <h3>Pending Leaves</h3>
+                <div class="stat-number">{{ pending_leaves }}</div>
+                <small>Awaiting approval</small>
             </div>
             <div class="stat-card">
-                <h3>Unread Messages</h3>
-                <div class="stat-number">{{ unread_messages }}</div>
-                <small>Requiring attention</small>
+                <h3>Recent Leaves</h3>
+                <div class="stat-number">{{ recent_leaves|length }}</div>
+                <small>Last 5 requests</small>
+            </div>
+            <div class="stat-card">
+                <h3>Active Tasks</h3>
+                <div class="stat-number">{{ admin_stats.active_tasks if admin_stats else 0 }}</div>
+                <small>To-do items</small>
             </div>
         </div>
 
+        <!-- Recent Leaves Section -->
+        {% if recent_leaves %}
+        <div class="system-status" style="animation: slideUp 0.9s ease;">
+            <div class="d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Recent Leave Requests</h3>
+                <a href="{{ url_for('admin_leave_requests') }}" class="btn-small">View All</a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="recent-leaves-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>Dates</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in recent_leaves %}
+                        <tr>
+                            <td>
+                                {% if leave.employee %}
+                                    {{ leave.employee.name }} {{ leave.employee.surname }}
+                                {% else %}
+                                    Unknown
+                                {% endif %}
+                            </td>
+                            <td>{{ leave.leave_type }}</td>
+                            <td>
+                                {{ leave.start_date.strftime('%Y-%m-%d') }} to 
+                                {{ leave.end_date.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td>
+                                {% set duration = (leave.end_date - leave.start_date).days + 1 %}
+                                {{ duration }} day{% if duration != 1 %}s{% endif %}
+                            </td>
+                            <td>
+                                {% if leave.status == 'pending' %}
+                                    <span class="badge badge-warning">Pending</span>
+                                {% elif leave.status == 'approved' %}
+                                    <span class="badge badge-success">Approved</span>
+                                {% elif leave.status == 'rejected' %}
+                                    <span class="badge badge-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <span class="badge badge-warning">{{ pending_leaves }} pending</span>
+                {% set total_leaves_approved = recent_leaves|selectattr('status', 'equalto', 'approved')|list|length %}
+                {% set total_leaves_rejected = recent_leaves|selectattr('status', 'equalto', 'rejected')|list|length %}
+                <span class="badge badge-success ms-2">{{ total_leaves_approved }} approved</span>
+                <span class="badge badge-danger ms-2">{{ total_leaves_rejected }} rejected</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Dashboard Navigation -->
         <div class="dashboard-nav">
             <div class="nav-grid">
                 <a href="{{ url_for('manage_employees') }}" class="nav-item">
@@ -513,17 +571,17 @@
                     <h3>Send Notifications</h3>
                     <p>Send announcements and alerts to all employees</p>
                 </a>
-                <a href="{{ url_for('admin_messages') }}" class="nav-item">
-                    <h3>Messages</h3>
-                    <p>Send and manage messages with employees</p>
+                <a href="{{ url_for('admin_view_notifications') }}" class="nav-item">
+                    <h3>View Notifications</h3>
+                    <p>View all sent notifications</p>
                 </a>
                 <a href="{{ url_for('admin_file_manager') }}" class="nav-item">
                     <h3>File Manager</h3>
                     <p>Manage company files and document storage</p>
                 </a>
-                <a href="{{ url_for('admin_inbox') }}" class="nav-item">
-                    <h3>Inbox</h3>
-                    <p>Check received messages and communications</p>
+                <a href="{{ url_for('admin_leave_requests') }}" class="nav-item">
+                    <h3>Leave Requests</h3>
+                    <p>Approve or reject employee leave requests</p>
                 </a>
                 <a href="{{ url_for('admin_todo') }}" class="nav-item">
                     <h3>To-Do List</h3>
@@ -536,16 +594,7 @@
             </div>
         </div>
 
-        <!-- Recent Activity Preview -->
-        <div class="system-status">
-            <h3>Recent Activity</h3>
-            <div style="text-align: center; padding: 20px; color: var(--gray-color);">
-                <p>Recent system activities and user actions will appear here</p>
-                <a href="{{ url_for('admin_login_logs') }}" class="btn-small" style="margin-top: 10px;">
-                    View Full Activity Logs
-                </a>
-            </div>
-        </div>
+      
     </div>
 
     <script>
@@ -566,40 +615,38 @@
                 item.style.animationDelay = `${index * 0.1}s`;
             });
 
-            // Add pulse animation to unread messages if there are any
-            const unreadMessages = {{ unread_messages }};
-            if (unreadMessages > 0) {
-                const unreadCard = document.querySelector('.stat-card:nth-child(3)');
-                if (unreadCard) {
-                    unreadCard.style.animation = 'pulse 2s ease 3';
+            // Add pulse animation to pending leaves if there are any
+            const pendingLeaves = {{ pending_leaves }};
+            if (pendingLeaves > 0) {
+                const pendingCard = document.querySelector('.stat-card:nth-child(2)');
+                if (pendingCard) {
+                    pendingCard.style.animation = 'pulse 2s ease 3';
                 }
             }
         });
 
-        // Real-time updates simulation
-        function simulateRealTimeUpdates() {
-            const stats = document.querySelectorAll('.stat-number');
-            if (stats.length >= 3) {
-                // Randomly update stats to simulate real-time changes
-                setInterval(() => {
-                    const randomChange = Math.random() > 0.7 ? 1 : 0;
-                    if (randomChange && {{ unread_messages }} > 0) {
-                        const unreadElement = stats[2];
-                        const currentValue = parseInt(unreadElement.textContent);
-                        unreadElement.textContent = currentValue + (Math.random() > 0.5 ? 1 : -1);
-                        
-                        if (parseInt(unreadElement.textContent) > 0) {
-                            unreadElement.parentElement.style.animation = 'pulse 1s ease';
-                            setTimeout(() => {
-                                unreadElement.parentElement.style.animation = '';
-                            }, 1000);
-                        }
-                    }
-                }, 10000);
+        // Highlight urgent items
+        document.addEventListener('DOMContentLoaded', function() {
+            // Highlight leave requests if pending for more than 2 days
+            const pendingLeaves = {{ pending_leaves }};
+            if (pendingLeaves > 0) {
+                const leaveNavItem = document.querySelector('.nav-item:nth-child(5)');
+                if (leaveNavItem) {
+                    leaveNavItem.style.borderLeftColor = 'var(--warning-color)';
+                    leaveNavItem.style.animation = 'pulse 3s ease infinite';
+                    
+                    // Add urgent badge
+                    const badge = document.createElement('span');
+                    badge.className = 'badge badge-warning';
+                    badge.style.position = 'absolute';
+                    badge.style.top = '10px';
+                    badge.style.right = '10px';
+                    badge.style.fontSize = '0.7rem';
+                    badge.textContent = 'Urgent';
+                    leaveNavItem.appendChild(badge);
+                }
             }
-        }
-
-        document.addEventListener('DOMContentLoaded', simulateRealTimeUpdates);
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
@@ -613,28 +660,15 @@
                 e.preventDefault();
                 window.location.href = "{{ url_for('manage_employees') }}";
             }
-            // Alt + M for messages
-            if (e.altKey && e.key === 'm') {
+            // Alt + L for leave requests
+            if (e.altKey && e.key === 'l') {
                 e.preventDefault();
-                window.location.href = "{{ url_for('admin_messages') }}";
+                window.location.href = "{{ url_for('admin_leave_requests') }}";
             }
-        });
-
-        // Show keyboard shortcuts help
-        function showKeyboardShortcuts() {
-            alert('Keyboard Shortcuts:\n\nAlt + N - Send Notification\nAlt + E - Manage Employees\nAlt + M - Messages');
-        }
-
-        // Add keyboard shortcuts info to quick actions
-        document.addEventListener('DOMContentLoaded', function() {
-            const quickActions = document.querySelector('.quick-actions .action-buttons');
-            if (quickActions) {
-                const helpBtn = document.createElement('button');
-                helpBtn.className = 'btn-small';
-                helpBtn.style.background = 'var(--gray-color)';
-                helpBtn.innerHTML = '⌨️ Keyboard Shortcuts';
-                helpBtn.onclick = showKeyboardShortcuts;
-                quickActions.appendChild(helpBtn);
+            // Alt + F for file manager
+            if (e.altKey && e.key === 'f') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('admin_file_manager') }}";
             }
         });
     </script>
